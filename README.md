@@ -51,6 +51,8 @@ Uploads make the same Steamworks calls in the same order as the game's uploader 
 
 ## Links from other apps
 
+After every successful upload the app posts the macOS distributed notification `io.github.lilpzmods.zomboid-workshop.uploaded` (object: the Workshop id). Zomboid Server Monitor listens for it and checks the server's mods right away.
+
 `zomboid-workshop-manager://item/<workshop id>` opens the app on that project. [Zomboid Server Monitor](https://github.com/lilPZmods/zomboid-server-monitor) uses this link for its "Upload" fix.
 
 ## License

@@ -332,6 +332,9 @@ final class Store: ObservableObject {
       contentFolder: item.project.contents.path, previewFile: item.project.preview.path, changeNote: note)
     let raw = try await helper(["submit"], input: try JSONEncoder().encode(update), progress: progressSetter(item))
     setBaseline(wid, p)
+    // Lets Zomboid Server Monitor (or anything else listening) react right away.
+    DistributedNotificationCenter.default().postNotificationName(
+      .init("io.github.lilpzmods.zomboid-workshop.uploaded"), object: wid, userInfo: nil, deliverImmediately: true)
     item.busy = "Downloading the new upload to compare"
     _ = try? await helper(["download", wid], progress: progressSetter(item))
     await refreshSteam()
