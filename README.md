@@ -14,7 +14,7 @@ The in-game uploader means launching the game, digging through menus, and hoping
 
 - **Publish new items.** Creates the Workshop item, writes the new id into `workshop.txt`, and uploads.
 - **Update existing items** with a change note and live upload progress.
-- **Edit the page:** title, description (Steam BBCode), tags from the game's own tag list, visibility, and preview image. Saved to `workshop.txt`, then sent to Steam.
+- **Edit the page:** title, description (Steam BBCode) with a live preview next to it styled like the Workshop page, tags from the game's own tag list, visibility, and preview image. Saved to `workshop.txt`, then sent to Steam.
 - **Check before upload** with the same rules the game uses: preview size and dimensions, the folder layout in `Contents/`, `mod.info` ids, map folders, and blocked file types.
 - **Show changed files.** Compares `Contents/` with the latest Steam upload, file by file.
 - **Keep page text in sync.** Every 10 minutes it compares `workshop.txt` with the live Steam page. It remembers the last synced version, so it can tell whether the page was edited on Steam, edited locally, or both. When the page changes on Steam you get a Mac notification, and you choose which way to sync. Uploads are blocked until the page is synced, so a Steam edit is never overwritten by accident.

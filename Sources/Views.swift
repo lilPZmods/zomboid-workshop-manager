@@ -1,6 +1,7 @@
 import AppKit
 import ServiceManagement
 import SwiftUI
+import WebKit
 
 struct ContentView: View {
   @EnvironmentObject var store: Store
@@ -132,6 +133,7 @@ struct ProjectDetail: View {
   @State private var showSteamText = false
   @State private var confirmOverwrite = false
   @State private var confirmUpload = false
+  @AppStorage("showPreview") private var showPreview = true
 
   var project: Project { item.project }
   var editing: Bool { draft != project.page }
@@ -151,7 +153,7 @@ struct ProjectDetail: View {
         uploadBox
       }
       .padding(20)
-      .frame(maxWidth: 820, alignment: .leading)
+      .frame(maxWidth: 1400, alignment: .leading)
     }
     .onAppear { draft = project.page }
     .onChange(of: item.busy) { _, busy in if busy == nil { draft = project.page } }
@@ -270,11 +272,22 @@ struct ProjectDetail: View {
         }
         LabeledContent("Tags") { TagPicker(selected: $draft.tags, allowed: store.allowedTags) }
         VStack(alignment: .leading, spacing: 4) {
-          Text("Description (Steam BBCode)")
-          TextEditor(text: $draft.description)
-            .font(.system(.body, design: .monospaced))
-            .frame(minHeight: 180)
-            .overlay(RoundedRectangle(cornerRadius: 4).stroke(.quaternary))
+          HStack {
+            Text("Description (Steam BBCode)")
+            Spacer()
+            Toggle("Steam Preview", isOn: $showPreview).toggleStyle(.switch).controlSize(.small)
+          }
+          HStack(spacing: 10) {
+            TextEditor(text: $draft.description)
+              .font(.system(.body, design: .monospaced))
+              .overlay(RoundedRectangle(cornerRadius: 4).stroke(.quaternary))
+            if showPreview {
+              SteamPreview(title: draft.title, description: draft.description)
+                .clipShape(RoundedRectangle(cornerRadius: 4))
+                .overlay(RoundedRectangle(cornerRadius: 4).stroke(.quaternary))
+            }
+          }
+          .frame(height: 440)
           Text("The game adds the Workshop ID and Mod ID lines on upload. Don't type them here.")
             .font(.caption).foregroundStyle(.secondary)
         }
@@ -489,5 +502,53 @@ struct MenuBarContent: View {
     if let id { store.selection = id }
     openWindow(id: "main")
     NSApp.activate(ignoringOtherApps: true)
+  }
+}
+
+/// Live preview of the description, rendered like the Workshop page.
+struct SteamPreview: NSViewRepresentable {
+  var title: String
+  var description: String
+
+  func makeCoordinator() -> Coordinator { Coordinator() }
+
+  func makeNSView(context: Context) -> WKWebView {
+    let web = WKWebView()
+    web.navigationDelegate = context.coordinator
+    web.setValue(false, forKey: "drawsBackground")
+    web.loadHTMLString(BBCode.page, baseURL: URL(string: "https://steamcommunity.com/"))
+    return web
+  }
+
+  func updateNSView(_ web: WKWebView, context: Context) {
+    context.coordinator.show(web, title: title, html: BBCode.html(description))
+  }
+
+  final class Coordinator: NSObject, WKNavigationDelegate {
+    var loaded = false
+    var pending: (WKWebView, String, String)?
+
+    func show(_ web: WKWebView, title: String, html: String) {
+      guard loaded else { pending = (web, title, html); return }
+      // Swap the content in place so the scroll position stays put while typing.
+      let t = (try? String(data: JSONEncoder().encode(title), encoding: .utf8)) ?? "\"\""
+      let h = (try? String(data: JSONEncoder().encode(html), encoding: .utf8)) ?? "\"\""
+      web.evaluateJavaScript("document.getElementById('title').textContent=\(t);document.getElementById('c').innerHTML=\(h);")
+    }
+
+    func webView(_ web: WKWebView, didFinish navigation: WKNavigation!) {
+      loaded = true
+      if let (w, t, h) = pending { pending = nil; show(w, title: t, html: h) }
+    }
+
+    // Clicked links open in the browser, not in the preview.
+    func webView(_ web: WKWebView, decidePolicyFor action: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+      if action.navigationType == .linkActivated, let url = action.request.url {
+        if url.scheme == "http" || url.scheme == "https" { NSWorkspace.shared.open(url) }
+        decisionHandler(.cancel)
+      } else {
+        decisionHandler(.allow)
+      }
+    }
   }
 }

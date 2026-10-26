@@ -37,7 +37,7 @@ struct ZomboidWorkshopManagerApp: App {
     Window("Zomboid Workshop Manager", id: "main") {
       ContentView()
         .environmentObject(store)
-        .frame(minWidth: 860, minHeight: 560)
+        .frame(minWidth: 1000, minHeight: 620)
         .onAppear { delegate.store = store }
         .onOpenURL { url in
           // zomboid-workshop-manager://item/<workshop id>
