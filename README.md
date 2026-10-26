@@ -19,6 +19,7 @@ The in-game uploader means launching the game, digging through menus, and hoping
 - **Show changed files.** Compares `Contents/` with the latest Steam upload, file by file.
 - **Keep page text in sync.** Every 10 minutes it compares `workshop.txt` with the live Steam page. It remembers the last synced version, so it can tell whether the page was edited on Steam, edited locally, or both. When the page changes on Steam you get a Mac notification, and you choose which way to sync. Uploads are blocked until the page is synced, so a Steam edit is never overwritten by accident.
 - **Cleans up the ID lines.** It ignores them when comparing, never copies them into `workshop.txt`, and offers to remove copies already there.
+- **Stats for every mod:** subscribers, lifetime subscribers, views, favorites, comments and votes, with 1-day and 7-day change and a graph over time. A small subscriber sparkline sits next to each mod in the list. The app records one snapshot per day, whenever it checks Steam, in `~/Library/Application Support/Zomboid Workshop Manager/history.json`. Field names match the Steam Web API (`subs`, `life_subs`, `views`, `favs`, `life_favs`, `up`, `down`, `comments`).
 - Backs up `workshop.txt` before every change, to `~/Library/Application Support/Zomboid Workshop Manager/backups/`.
 - Stays in the menu bar after you close the window, so the sync checks keep running. Optionally opens at login.
 

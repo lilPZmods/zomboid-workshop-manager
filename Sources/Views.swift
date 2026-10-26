@@ -61,6 +61,7 @@ struct ContentView: View {
 }
 
 struct ProjectRow: View {
+  @EnvironmentObject var store: Store
   @ObservedObject var item: ItemState
 
   var body: some View {
@@ -71,6 +72,14 @@ struct ProjectRow: View {
         Text(summary).font(.caption).foregroundStyle(item.needsAttention ? .orange : .secondary).lineLimit(1)
       }
       Spacer()
+      if let wid = item.project.workshopID {
+        let snaps = store.history.snapshots(wid)
+        if snaps.count > 1 { Sparkline(snapshots: snaps) }
+        if let subs = snaps.last?.values["subs"] {
+          Text(subs.formatted()).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+            .help("Subscribers")
+        }
+      }
       if item.busy != nil { ProgressView().controlSize(.small) }
       else if item.needsAttention { Image(systemName: "exclamationmark.circle.fill").foregroundStyle(.orange) }
     }
@@ -147,6 +156,9 @@ struct ProjectDetail: View {
         if let e = item.error { Banner(color: .red, symbol: "exclamationmark.octagon", text: e) }
         if let m = item.message { Banner(color: .green, symbol: "checkmark.circle", text: m) }
         pageSyncBanner
+        if let wid = project.workshopID {
+          StatsBox(snapshots: store.history.snapshots(wid)).id("\(wid)-\(store.historyVersion)")
+        }
         pageEditor
         checks
         files

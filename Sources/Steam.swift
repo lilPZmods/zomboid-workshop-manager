@@ -24,6 +24,7 @@ struct SteamItem: Codable {
   var previewURL: String
   var installedFolder: String?
   var installedTime: UInt32?
+  var stats: [String: UInt64]? = nil
 }
 
 final class Steam {
@@ -108,6 +109,10 @@ final class Steam {
 
     let getResult = try fn("SteamAPI_ISteamUGC_GetQueryUGCResult", Result.self)
     let getPreview = try fn("SteamAPI_ISteamUGC_GetQueryUGCPreviewURL", Preview.self)
+    typealias Stat = @convention(c) (OpaquePointer?, UInt64, UInt32, Int32, UnsafeMutablePointer<UInt64>) -> Bool
+    let getStat = try fn("SteamAPI_ISteamUGC_GetQueryUGCStatistic", Stat.self)
+    // EItemStatistic values, named like the Steam Web API fields.
+    let statNames: [(Int32, String)] = [(0, "subs"), (1, "favs"), (3, "life_subs"), (4, "life_favs"), (6, "views"), (10, "comments")]
     var items: [SteamItem] = []
     // SteamUGCDetails_t, packed to 4 bytes on macOS. The buffer is oversized
     // on purpose; fields are read by their SDK offsets.
@@ -133,6 +138,12 @@ final class Steam {
         id: String(id), result: i32(8), title: str(24, 129), description: str(153, 8000), tags: tags,
         visibility: i32(8176), owner: String(u64(8156)), timeUpdated: u32(8168), previewURL: String(cString: url))
       if let info = installInfo(id) { item.installedFolder = info.0; item.installedTime = info.1 }
+      var stats: [String: UInt64] = ["up": UInt64(u32(9748)), "down": UInt64(u32(9752))]
+      for (stat, name) in statNames {
+        var v: UInt64 = 0
+        if getStat(ugc, handle, index, stat, &v) { stats[name] = v }
+      }
+      item.stats = stats
       items.append(item)
     }
     return items

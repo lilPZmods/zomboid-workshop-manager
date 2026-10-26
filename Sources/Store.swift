@@ -57,6 +57,8 @@ final class Store: ObservableObject {
   @Published var refreshing = false
   @Published var globalError: String?
   var allowedTags: [String] = []
+  lazy var history = StatsHistory(directory: supportDir)
+  @Published var historyVersion = 0
   private var timer: Timer?
   private let steamQueue = DispatchQueue(label: "steam-helper")
 
@@ -217,6 +219,8 @@ final class Store: ObservableObject {
         updatePageSync(item)
         updateContentSync(item)
       }
+      history.record(Dictionary(steamItems.compactMap { i in i.result == 1 ? i.stats.map { (i.id, $0) } : nil }, uniquingKeysWith: { a, _ in a }))
+      historyVersion += 1
       globalError = nil
       lastRefresh = Date()
       notifySteamEdits()
